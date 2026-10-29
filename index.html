@@ -1,13 +1,232 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1463d9">
+  <title>Geolocalización inversa</title>
+  <style>
+    * { box-sizing: border-box; }
 
-    <script src="./index.js"></script>
+    body {
+      margin: 0;
+      padding: 20px 14px;
+      color: #172033;
+      background: #f2f5f9;
+      font: 16px/1.5 system-ui, sans-serif;
+    }
+
+    main {
+      width: min(100%, 720px);
+      margin: 0 auto;
+      padding: 22px;
+      border-radius: 14px;
+      background: white;
+      box-shadow: 0 4px 20px #17203314;
+    }
+
+    h1 { margin-top: 0; font-size: 1.6rem; }
+    h2 { margin-top: 24px; font-size: 1.15rem; }
+
+    button, input {
+      min-height: 46px;
+      border-radius: 8px;
+      font: inherit;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px 14px;
+      border: 0;
+      color: white;
+      background: #1463d9;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    button:disabled { opacity: .6; cursor: wait; }
+
+    input {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid #aeb9c8;
+    }
+
+    label { display: block; margin: 10px 0 5px; font-weight: 600; }
+
+    .coords {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    #mensaje {
+      min-height: 1.5em;
+      overflow-wrap: anywhere;
+    }
+
+    #resultados {
+      padding: 14px;
+      border-radius: 8px;
+      background: #f2f5f9;
+      overflow: auto;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-size: .88rem;
+    }
+
+    .nota { color: #536176; font-size: .9rem; }
+
+    @media (max-width: 440px) {
+      main { padding: 17px; }
+      .coords { grid-template-columns: 1fr; gap: 0; }
+    }
+  </style>
 </head>
 <body>
-    
+  <main>
+    <h1>Geolocalización inversa</h1>
+    <p>Obtén tus coordenadas o escribe unas para buscar su dirección aproximada.</p>
+
+    <button id="buscarUbicacion" type="button">Usar mi ubicación</button>
+    <p id="mensaje" role="status" aria-live="polite"></p>
+
+    <form id="formulario">
+      <div class="coords">
+        <div>
+          <label for="latitud">Latitud</label>
+          <input id="latitud" type="number" step="any" min="-90" max="90"
+                 placeholder="-16.4090" required>
+        </div>
+        <div>
+          <label for="longitud">Longitud</label>
+          <input id="longitud" type="number" step="any" min="-180" max="180"
+                 placeholder="-71.5375" required>
+        </div>
+      </div>
+      <p><button type="submit">Buscar dirección de estas coordenadas</button></p>
+    </form>
+
+    <h2>Datos recibidos</h2>
+    <pre id="resultados">Aún no hay resultados.</pre>
+
+    <p class="nota">
+      La dirección puede ser aproximada y depende de los datos disponibles en
+      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">
+        OpenStreetMap
+      </a>.
+    </p>
+  </main>
+
+  <script>
+    const botonUbicacion = document.querySelector("#buscarUbicacion");
+    const formulario = document.querySelector("#formulario");
+    const mensaje = document.querySelector("#mensaje");
+    const resultados = document.querySelector("#resultados");
+    const campoLatitud = document.querySelector("#latitud");
+    const campoLongitud = document.querySelector("#longitud");
+
+    function aplanar(objeto, ruta = "", salida = []) {
+      if (objeto === null || typeof objeto !== "object") {
+        salida.push({ campo: ruta, valor: objeto });
+        return salida;
+      }
+
+      for (const [clave, valor] of Object.entries(objeto)) {
+        const campo = ruta ? `${ruta}.${clave}` : clave;
+        aplanar(valor, campo, salida);
+      }
+
+      return salida;
+    }
+
+    async function buscarDireccion(latitud, longitud, precision = null) {
+      mensaje.textContent = "Consultando la dirección…";
+      resultados.textContent = "Cargando…";
+
+      const url = new URL("https://nominatim.openstreetmap.org/reverse");
+      url.search = new URLSearchParams({
+        format: "jsonv2",
+        lat: String(latitud),
+        lon: String(longitud),
+        "accept-language": "es"
+      });
+
+      try {
+        const respuesta = await fetch(url);
+
+        if (!respuesta.ok) {
+          throw new Error(`El servicio respondió con error ${respuesta.status}.`);
+        }
+
+        const datos = await respuesta.json();
+        const array = [
+          { campo: "coordenadas.latitud", valor: latitud },
+          { campo: "coordenadas.longitud", valor: longitud },
+          { campo: "coordenadas.precision_metros", valor: precision },
+          ...aplanar(datos)
+        ];
+
+        resultados.textContent = JSON.stringify(array, null, 2);
+        mensaje.textContent = "Dirección encontrada.";
+      } catch (error) {
+        resultados.textContent = "No se pudieron cargar los datos.";
+        mensaje.textContent = `Error al consultar la dirección: ${error.message}`;
+      }
+    }
+
+    botonUbicacion.addEventListener("click", () => {
+      if (!window.isSecureContext) {
+        mensaje.textContent =
+          "El navegador bloquea el GPS en esta dirección. Usa HTTPS o abre la app en localhost; también puedes introducir las coordenadas manualmente.";
+        return;
+      }
+
+      if (!navigator.geolocation) {
+        mensaje.textContent =
+          "Este navegador no ofrece geolocalización. Puedes introducir las coordenadas manualmente.";
+        return;
+      }
+
+      botonUbicacion.disabled = true;
+      mensaje.textContent = "Solicitando ubicación…";
+
+      navigator.geolocation.getCurrentPosition(
+        ({ coords }) => {
+          campoLatitud.value = coords.latitude;
+          campoLongitud.value = coords.longitude;
+          botonUbicacion.disabled = false;
+          buscarDireccion(coords.latitude, coords.longitude, coords.accuracy);
+        },
+        (error) => {
+          const mensajes = {
+            1: "Permiso denegado. Habilita Ubicación para este sitio en los ajustes del navegador y del teléfono.",
+            2: "No se pudo determinar la ubicación. Comprueba que el GPS esté activado.",
+            3: "Se agotó el tiempo de espera. Inténtalo otra vez."
+          };
+
+          mensaje.textContent =
+            mensajes[error.code] || "No se pudo obtener la ubicación.";
+          botonUbicacion.disabled = false;
+        },
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+      );
+    });
+
+    formulario.addEventListener("submit", (evento) => {
+      evento.preventDefault();
+
+      const latitud = Number(campoLatitud.value);
+      const longitud = Number(campoLongitud.value);
+
+      if (!Number.isFinite(latitud) || latitud < -90 || latitud > 90 ||
+          !Number.isFinite(longitud) || longitud < -180 || longitud > 180) {
+        mensaje.textContent = "Introduce una latitud entre -90 y 90 y una longitud entre -180 y 180.";
+        return;
+      }
+
+      buscarDireccion(latitud, longitud);
+    });
+  </script>
 </body>
 </html>
