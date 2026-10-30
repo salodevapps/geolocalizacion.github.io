@@ -11,7 +11,7 @@
  
 
   <script>
-  globalThis.obtenerGeolocalizacion = async function () {
+globalThis.obtenerGeolocalizacion = async function () {
   if (!window.isSecureContext || !navigator.geolocation) {
     throw new Error("La geolocalización requiere HTTPS o localhost y un navegador compatible.");
   }
@@ -38,7 +38,8 @@
 
   return {
     distrito: data.address?.city ?? null,
-    provincia: data.address?.state ?? null,
+    provincia: data.address?.region ?? null,
+    departamento: data.address?.state ?? null,
     pais: data.address?.country ?? null,
     calle: data.address?.road ?? null,
     latitud: coords.latitude,
@@ -56,6 +57,7 @@ obtenerGeolocalizacion()
 
     alert(resultado.calle);
     alert(resultado.provincia);
+    alert(resultado.departamento);
 
     // console.log(resultado);
   })
