@@ -38,7 +38,7 @@
 
   return {
     distrito: data.address?.city ?? null,
-    provincia: data.address?.region ?? null,
+    provincia: data.address?.state ?? null,
     pais: data.address?.country ?? null,
     calle: data.address?.road ?? null,
     latitud: coords.latitude,
