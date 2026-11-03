@@ -43,8 +43,8 @@ globalThis.obtenerGeolocalizacion = async function () {
     pais: data.address?.country ?? null,
     calle: data.address?.road ?? null,
     vecindario: data.address?.neighbourhood ?? null,
-    latitud: coords.latitude,
-    longitud: coords.longitude,
+    latitud: coords.latitude.toFixed(6) ,
+    longitud: coords.longitude.toFixed(6),
     precisionMetros: coords.accuracy,
     datos: data
   };
@@ -56,13 +56,13 @@ globalThis.obtenerGeolocalizacion = async function () {
 obtenerGeolocalizacion()
   .then(resultado => {
 
-  var lat = resultado.latitud.toFixed(6);
-    var lng = resultado.longitud.toFixed(6);
+  // var lat = resultado.latitud.toFixed(6);
+    // var lng = resultado.longitud.toFixed(6);
 
 
     console.log(resultado.vecindario);
-    alert(lat);
-    alert(lng);
+    alert(resultado.latitud,resultado.longitud);
+    // alert(resultado.vecindario);
 
     alert(resultado.vecindario);
     alert(resultado.distrito);
