@@ -48,13 +48,22 @@ globalThis.obtenerGeolocalizacion = async function () {
     precisionMetros: coords.accuracy,
     datos: data
   };
+
 };
 
 
 
 obtenerGeolocalizacion()
   .then(resultado => {
+
+  var lat = resultado.latitud.toFixed(6);
+    var lng = resultado.longitud.toFixed(6);
+
+
     console.log(resultado.vecindario);
+    alert(lat);
+    alert(lng);
+
     alert(resultado.vecindario);
     alert(resultado.distrito);
     alert(resultado.provincia);
