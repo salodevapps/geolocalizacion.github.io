@@ -42,6 +42,7 @@ globalThis.obtenerGeolocalizacion = async function () {
     departamento: data.address?.state ?? null,
     pais: data.address?.country ?? null,
     calle: data.address?.road ?? null,
+    vecindario: data.address?.neighbourhood ?? null,
     latitud: coords.latitude,
     longitud: coords.longitude,
     precisionMetros: coords.accuracy,
@@ -53,8 +54,8 @@ globalThis.obtenerGeolocalizacion = async function () {
 
 obtenerGeolocalizacion()
   .then(resultado => {
-    console.log(resultado.calle);
-
+    console.log(resultado.vecindario);
+    alert(resultado.vecindario);
     alert(resultado.distrito);
     alert(resultado.provincia);
     alert(resultado.departamento);
